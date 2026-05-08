@@ -2,3 +2,5 @@ deepfashion2
 deepfashion2_yolo
 runs
 *.pt
+.env
+__pycache__
