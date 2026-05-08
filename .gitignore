@@ -1,0 +1,4 @@
+deepfashion2
+deepfashion2_yolo
+runs
+*.pt
