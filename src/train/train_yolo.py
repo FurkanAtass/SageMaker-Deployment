@@ -1,6 +1,6 @@
 import os
 from ultralytics import YOLO
-from src.mlflow_service.mlflow import (
+from src.mlflow_service.mlflow_functions import (
     setup_experiment,
     start_run,
     log_training_params,
