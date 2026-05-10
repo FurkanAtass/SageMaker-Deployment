@@ -34,8 +34,38 @@ def _sanitize_metric_name(name: str) -> str:
     return name.replace("(", "_").replace(")", "")
 
 
-def log_training_metrics(results_dict: dict) -> None:
-    mlflow.log_metrics({_sanitize_metric_name(k): float(v) for k, v in results_dict.items()})
+def log_training_metrics(results_dict: dict, step: int | None = None) -> None:
+    mlflow.log_metrics(
+        {_sanitize_metric_name(k): float(v) for k, v in results_dict.items()},
+        step=step,
+    )
+
+
+def make_epoch_callback():
+    def on_train_epoch_end(trainer):
+        epoch = trainer.epoch + 1
+        metrics = {**trainer.label_loss_items(trainer.tloss, prefix="train"), **trainer.metrics}
+        log_training_metrics(metrics, step=epoch)
+
+    return on_train_epoch_end
+
+
+def predict_next_run_name(project_dir: str, run_name: str) -> str:
+    if not os.path.isdir(project_dir):
+        return run_name
+    existing = {run_name} if os.path.isdir(os.path.join(project_dir, run_name)) else set()
+    for entry in os.scandir(project_dir):
+        if entry.is_dir() and entry.name.startswith(run_name + "-"):
+            suffix = entry.name[len(run_name) + 1:]
+            if suffix.isdigit():
+                existing.add(entry.name)
+    if not existing:
+        return run_name
+    max_n = max(
+        int(n[len(run_name) + 1:]) if n != run_name else 1
+        for n in existing
+    )
+    return f"{run_name}-{max_n + 1}"
 
 
 def _find_latest_run_dir(project_dir: str, run_name: str) -> str | None:
