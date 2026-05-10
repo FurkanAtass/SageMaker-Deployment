@@ -95,12 +95,43 @@ def log_run_artifacts(project_dir: str, run_name: str) -> None:
         print(f"Warning: No run directory found for '{run_name}' in {project_dir}. Skipping artifact logging.")
         return
     print(f"Logging artifacts from: {run_dir}")
-    for root, _, files in os.walk(run_dir):
+    for root, dirs, files in os.walk(run_dir):
+        dirs[:] = [d for d in dirs if d != "weights"]
         for file in files:
             file_path = os.path.join(root, file)
             rel_dir = os.path.relpath(root, run_dir)
             artifact_path = None if rel_dir == "." else rel_dir
             mlflow.log_artifact(file_path, artifact_path=artifact_path)
+
+class _YOLOWrapper(mlflow.pyfunc.PythonModel):
+    def load_context(self, context):
+        from ultralytics import YOLO
+        self.model = YOLO(context.artifacts["weights"])
+
+    def predict(self, context, model_input):
+        return self.model(model_input)
+
+
+def register_model(model_name: str, weights_path: str) -> None:
+    run = mlflow.active_run()
+    if run is None:
+        raise RuntimeError("No active MLflow run.")
+    model_info = mlflow.pyfunc.log_model(
+        name=model_name,
+        python_model=_YOLOWrapper(),
+        artifacts={"weights": weights_path},
+    )
+    client = get_client()
+    try:
+        client.create_registered_model(model_name)
+    except Exception:
+        pass  # already exists
+    client.create_model_version(
+        name=model_name,
+        source=model_info.model_uri,
+        run_id=run.info.run_id,
+    )
+
 
 def start_run(run_name: str = ""):
     return mlflow.start_run(run_name=run_name)

@@ -7,6 +7,7 @@ from src.mlflow_service.mlflow_functions import (
     log_training_metrics,
     log_run_artifacts,
     make_epoch_callback,
+    register_model,
 )
 
 EXPERIMENT_NAME = "YOLO 26 Training"
@@ -42,3 +43,4 @@ with start_run(run_name=RUN_NAME):
 
     log_training_metrics(results.results_dict)
     log_run_artifacts(PROJECT_DIR, RUN_NAME)
+    register_model("yolo26n-deepfashion2", f"{PROJECT_DIR}/{RUN_NAME}/weights/best.pt")
