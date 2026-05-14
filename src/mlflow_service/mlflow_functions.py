@@ -52,24 +52,6 @@ def make_epoch_callback():
     return on_train_epoch_end
 
 
-def predict_next_run_name(project_dir: str, run_name: str) -> str:
-    if not os.path.isdir(project_dir):
-        return run_name
-    existing = {run_name} if os.path.isdir(os.path.join(project_dir, run_name)) else set()
-    for entry in os.scandir(project_dir):
-        if entry.is_dir() and entry.name.startswith(run_name + "-"):
-            suffix = entry.name[len(run_name) + 1:]
-            if suffix.isdigit():
-                existing.add(entry.name)
-    if not existing:
-        return run_name
-    max_n = max(
-        int(n[len(run_name) + 1:]) if n != run_name else 1
-        for n in existing
-    )
-    return f"{run_name}-{max_n + 1}"
-
-
 def _find_latest_run_dir(project_dir: str, run_name: str) -> str | None:
     if not os.path.isdir(project_dir):
         return None
