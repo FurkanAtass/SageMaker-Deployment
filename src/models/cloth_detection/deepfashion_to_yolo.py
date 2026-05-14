@@ -148,7 +148,7 @@ names:
 
 def main():
     
-    root = Path("src/train/deepfashion2")
+    root = Path("src/models/cloth_detection/deepfashion2")
 
     train_images = root / "train" / "image"
     train_anns = root / "train" / "annos"
@@ -159,7 +159,7 @@ def main():
     test_images = root / "test" / "image"
     test_anns = root / "test" / "annos"
 
-    out_root = Path("src/train/deepfashion2_yolo")
+    out_root = Path("src/models/cloth_detection/deepfashion2_yolo")
 
     if not Path(out_root / "train").exists():
         convert_split(
