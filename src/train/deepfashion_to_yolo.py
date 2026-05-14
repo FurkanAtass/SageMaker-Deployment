@@ -3,8 +3,8 @@ import json
 import shutil
 from PIL import Image
 
-MAX_TRAIN_IMAGES = 1000
-MAX_VAL_IMAGES = 100
+MAX_TRAIN_IMAGES = 5000
+MAX_VAL_IMAGES = 500
 
 CATEGORY_ID_TO_NAME = {
     1: "short_sleeved_shirt",

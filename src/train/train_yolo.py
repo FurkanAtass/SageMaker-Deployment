@@ -16,7 +16,7 @@ RUN_NAME = "deepfashion2-1k-yolo26n"
 MODEL_NAME = "yolo26n-deepfashion2"
 DATASET_NAME = "deepfashion2-1k"
 BATCH_SIZE = 16
-EPOCHS = 5
+EPOCHS = 10
 
 IMGSZ = 640
 PROJECT_DIR = f"{os.getcwd()}/src/train/runs"
@@ -46,4 +46,4 @@ with start_run(run_name=RUN_NAME):
 
     log_training_metrics(results.results_dict)
     log_run_artifacts(PROJECT_DIR, RUN_NAME)
-    log_model(MODEL_NAME, f"{PROJECT_DIR}/{RUN_NAME}/weights/best.pt")
+    log_model(MODEL_NAME, RUN_NAME, PROJECT_DIR)

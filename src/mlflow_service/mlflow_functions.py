@@ -91,25 +91,30 @@ def _find_latest_run_dir(project_dir: str, run_name: str) -> str | None:
 
 
 def log_run_artifacts(project_dir: str, run_name: str) -> None:
-    run_dir = _find_latest_run_dir(project_dir, run_name)
-    if run_dir is None:
+    latest_run_dir = _find_latest_run_dir(project_dir, run_name)
+    if latest_run_dir is None:
         print(f"Warning: No run directory found for '{run_name}' in {project_dir}. Skipping artifact logging.")
         return
-    print(f"Logging artifacts from: {run_dir}")
-    for root, dirs, files in os.walk(run_dir):
+    print(f"Logging artifacts from: {latest_run_dir}")
+    for root, dirs, files in os.walk(latest_run_dir):
         dirs[:] = [d for d in dirs if d != "weights"]
         for file in files:
             file_path = os.path.join(root, file)
-            rel_dir = os.path.relpath(root, run_dir)
+            rel_dir = os.path.relpath(root, latest_run_dir)
             artifact_path = None if rel_dir == "." else rel_dir
             mlflow.log_artifact(file_path, artifact_path=artifact_path)
 
 
-def log_model(model_name: str, weights_path: str) -> str:
+def log_model(model_name: str, run_name: str, project_dir: str) -> None:
     run = mlflow.active_run()
     if run is None:
         raise RuntimeError("No active MLflow run.")
 
+    latest_run_dir = _find_latest_run_dir(project_dir, run_name)
+    if latest_run_dir is None:
+        raise RuntimeError(f"No run directory found for '{run_name}' in {project_dir}. Cannot log model.")
+    
+    weights_path = f"{latest_run_dir}/weights/best.pt"
     mlflow.pyfunc.log_model(
         name=model_name,
         python_model="src/mlflow_service/yolo_wrapper.py",
@@ -121,7 +126,7 @@ def start_run(run_name: str = ""):
     return mlflow.start_run(run_name=run_name)
 
 
-def get_model_version(model_name: str, env: str) -> ModelVersion:
+def get_model_version(model_name: str, env: str) -> str:
     client = get_client()
     versions = client.search_model_versions(f"name='{model_name}'")
 
