@@ -7,14 +7,17 @@ from src.mlflow_service.mlflow_functions import (
     log_training_metrics,
     log_run_artifacts,
     make_epoch_callback,
-    register_model,
+    log_model,
 )
+from ultralytics import settings
 
-EXPERIMENT_NAME = "YOLO 26 Training"
+EXPERIMENT_NAME = "Cloth Detection"
 RUN_NAME = "deepfashion2-1k-yolo26n"
-
+MODEL_NAME = "yolo26n-deepfashion2"
+DATASET_NAME = "deepfashion2-1k"
 BATCH_SIZE = 16
 EPOCHS = 5
+
 IMGSZ = 640
 PROJECT_DIR = f"{os.getcwd()}/src/train/runs"
 
@@ -29,7 +32,7 @@ with start_run(run_name=RUN_NAME):
         "batch": BATCH_SIZE,
         "epochs": EPOCHS,
         "imgsz": IMGSZ,
-        "dataset": "deepfashion2",
+        "dataset": DATASET_NAME,
     })
 
     results = model.train(
@@ -43,4 +46,4 @@ with start_run(run_name=RUN_NAME):
 
     log_training_metrics(results.results_dict)
     log_run_artifacts(PROJECT_DIR, RUN_NAME)
-    register_model("yolo26n-deepfashion2", f"{PROJECT_DIR}/{RUN_NAME}/weights/best.pt")
+    log_model(MODEL_NAME, f"{PROJECT_DIR}/{RUN_NAME}/weights/best.pt")

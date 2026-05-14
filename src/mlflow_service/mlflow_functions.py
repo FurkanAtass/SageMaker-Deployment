@@ -2,6 +2,8 @@ import os
 from dotenv import load_dotenv
 import mlflow
 from mlflow.tracking import MlflowClient
+from mlflow.entities.model_registry import ModelVersion
+from typing import Any
 
 load_dotenv()
 
@@ -80,7 +82,6 @@ def _find_latest_run_dir(project_dir: str, run_name: str) -> str | None:
             suffix = name[len(run_name) + 1:]
             if suffix.isdigit():
                 candidates.append(name)
-    # Sort: base name first, then by numeric suffix
     candidates.sort(key=lambda n: int(n[len(run_name) + 1:]) if n != run_name else 0)
     for candidate in reversed(candidates):
         path = os.path.join(project_dir, candidate)
@@ -103,35 +104,37 @@ def log_run_artifacts(project_dir: str, run_name: str) -> None:
             artifact_path = None if rel_dir == "." else rel_dir
             mlflow.log_artifact(file_path, artifact_path=artifact_path)
 
-class _YOLOWrapper(mlflow.pyfunc.PythonModel):
-    def load_context(self, context):
-        from ultralytics import YOLO
-        self.model = YOLO(context.artifacts["weights"])
 
-    def predict(self, context, model_input):
-        return self.model(model_input)
-
-
-def register_model(model_name: str, weights_path: str) -> None:
+def log_model(model_name: str, weights_path: str) -> str:
     run = mlflow.active_run()
     if run is None:
         raise RuntimeError("No active MLflow run.")
-    model_info = mlflow.pyfunc.log_model(
+
+    mlflow.pyfunc.log_model(
         name=model_name,
-        python_model=_YOLOWrapper(),
+        python_model="src/mlflow_service/yolo_wrapper.py",
         artifacts={"weights": weights_path},
-    )
-    client = get_client()
-    try:
-        client.create_registered_model(model_name)
-    except Exception:
-        pass  # already exists
-    client.create_model_version(
-        name=model_name,
-        source=model_info.model_uri,
-        run_id=run.info.run_id,
     )
 
 
 def start_run(run_name: str = ""):
     return mlflow.start_run(run_name=run_name)
+
+
+def get_model_version(model_name: str, env: str) -> ModelVersion:
+    client = get_client()
+    versions = client.search_model_versions(f"name='{model_name}'")
+
+    model_version = [version for version in versions if version.tags.get(env) == "True"]
+    if len(model_version) == 0:
+        raise ValueError(f"No model version found for model '{model_name}' with tag '{env}=True'.")
+    if len(model_version) > 1:
+        print(f"Multiple model versions found for model '{model_name}' with tag '{env}=True'.")
+    
+    return model_version[0].version
+
+
+def load_model(model_name: str, env: str):
+    version = get_model_version(model_name, env)
+    model_uri = f"models:/{model_name}/{version}"
+    return mlflow.pyfunc.load_model(model_uri=model_uri)
