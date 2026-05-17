@@ -46,6 +46,7 @@ class ClothDetectionYOLO(BaseModel):
     def __init__(self, **config: Any) -> None:
         super().__init__(**config)
         self.model: YOLO | None = None
+        self.current_model_version: str | None = None
 
     def _make_epoch_callback(self):
         def on_train_epoch_end(trainer):
@@ -126,8 +127,20 @@ class ClothDetectionYOLO(BaseModel):
     def load_model(self) -> Any:
         env = self.config["env"]
         version = get_model_version(self.registered_model_name, env)
+        self.current_model_version = version
         model_uri = f"models:/{self.registered_model_name}/{version}"
         return mlflow.pyfunc.load_model(model_uri=model_uri)
+
+    def update_model_version(self):
+        env = self.config["env"]
+        version = get_model_version(self.registered_model_name, env)
+            
+        if version != self.current_model_version:
+            print(f"Model version updated from {self.current_model_version} to {version}. Reloading model.")
+            self.current_model_version = version
+            self.model = self.load_model()
+            self.model = self.model.unwrap_python_model().model
+
 
     def predict(self, inputs: Any, **kwargs: Any) -> Any:
         if self.model is None:

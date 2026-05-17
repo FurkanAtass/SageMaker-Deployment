@@ -1,0 +1,11 @@
+.venv
+.git
+.github
+.gitignore
+
+runs
+deepfashion2
+deepfashion2_yolo
+
+*.pt
+.env
