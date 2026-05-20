@@ -3,9 +3,12 @@
 .github
 .gitignore
 
-runs
-deepfashion2
-deepfashion2_yolo
+runs/
+deepfashion2/
+deepfashion2_yolo/
 
 *.pt
 .env
+
+**/__pycache__
+sagemaker_deployment.egg-info

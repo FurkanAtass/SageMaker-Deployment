@@ -1,6 +1,6 @@
 FROM nvidia/cuda:12.9.2-base-ubuntu24.04
 
-WORKDIR app/
+WORKDIR /app
 
 COPY pyproject.toml .python-version uv.lock ./
 RUN apt update && \

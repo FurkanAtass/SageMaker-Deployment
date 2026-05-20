@@ -18,6 +18,8 @@ UPDATE_INTERVAL_SECONDS = int(os.getenv("MODEL_UPDATE_INTERVAL", "300"))
 
 model = ClothDetectionYOLO(env=env)
 
+#model.update_model_version()
+
 async def _update_loop():
     while True:
         try:
