@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.9.2-base-ubuntu24.04
+FROM nvidia/cuda:12.4.1-base-ubuntu22.04
 
 WORKDIR /app
 
@@ -25,4 +25,6 @@ ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1
 
 EXPOSE 8080
-CMD ["uvicorn", "src.services.cloth_detection.app:app", "--host", "0.0.0.0", "--port", "8080"]
+RUN printf '#!/bin/sh\nexec uvicorn src.services.cloth_detection.app:app --host 0.0.0.0 --port 8080\n' \
+    > /usr/local/bin/serve && chmod +x /usr/local/bin/serve
+

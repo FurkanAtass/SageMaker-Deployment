@@ -4,9 +4,8 @@ import json
 import os
 from contextlib import asynccontextmanager
 
-import fastapi
 from dotenv import load_dotenv
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, UploadFile, status, Response
 from PIL import Image
 
 from src.models.cloth_detection.model import ClothDetectionYOLO
@@ -40,14 +39,22 @@ app = FastAPI(lifespan=lifespan)
 
 @app.get("/ping")
 async def ping():
-    health = model is not None
-    status = 200 if health else 404
-    content = json.dumps({"status": "healthy"}) if health else json.dumps({})
-    return fastapi.Response(content=content, status_code=status, media_type="application/json")
+    return Response(
+        content=json.dumps({"status": "healthy"}), 
+        status_code=status.HTTP_200_OK, 
+        media_type="application/json"
+    )
 
 
 @app.post("/invocations")
 async def cloth_detection(file: UploadFile):
     image = Image.open(io.BytesIO(await file.read())).convert("RGB")
-    results = model.predict([image])
-    return {"results": [json.loads(r.to_json()) for r in results]}
+    model_resp = model.predict([image])
+    results = {"results": [json.loads(r.to_json()) for r in model_resp]}
+    
+    response = Response(
+        content = json.dumps(results),
+        status_code=status.HTTP_200_OK,
+        media_type="application/json"
+    )
+    return response
